@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auto Zoeker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+<style>
+  :root{
+    --bg: #0b0c10;
+    --card: #12141a;
+    --muted: #8a93a0;
+    --text: #e7ecf3;
+    --accent: #6ee7b7;
+    --accent2:#93c5fd;
+    --ring: #3b82f6;
+    --border: #212634;
+    --danger:#f87171;
+    --ok:#34d399;
+    --shadow: 0 10px 25px rgba(0,0,0,.4);
+    --radius: 16px;
+  body.dark {
+    --bg: #0b0c10;
+    --card: #12141a;
+    --muted: #8a93a0;
+    --text: #e7ecf3;
+    --accent: #6ee7b7;
+    --accent2:#93c5fd;
+    --ring: #3b82f6;
+    --border: #212634;
+    --danger:#f87171;
+    --ok:#34d399;
+    --shadow: 0 10px 25px rgba(0,0,0,.4);
+  }
+  body.light {
+    --bg: #f6f7fb;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#556070;
+    --border:#e6e8ee;
+    --shadow:0 8px 20px rgba(15,23,42,.06);
+  }
+  }
+  @media (prefers-color-scheme: light) {
+    :root{
+      --bg: #f6f7fb; --card:#ffffff; --text:#0f172a; --muted:#556070; --border:#e6e8ee; --shadow:0 8px 20px rgba(15,23,42,.06);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji"; background: radial-gradient(1200px 600px at 10% -10%, rgba(99,102,241,.15), transparent 60%), radial-gradient(900px 500px at 110% -20%, rgba(16,185,129,.18), transparent 60%), var(--bg); color:var(--text)}
+  a{color:var(--accent2); text-decoration: none}
+  a:hover{text-decoration: underline}
+.wrap{
+  max-width: min(95vw, 1400px); /* wider container */
+  margin: 28px auto;
+  padding: 0 16px;
+}
+  header{display:flex; align-items:center; gap:12px; margin-bottom:16px}
+  .logo{display:grid; place-items:center; width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, rgba(99,102,241,.25), rgba(16,185,129,.25)); box-shadow: var(--shadow)}
+  .title{font-weight:700; letter-spacing:.2px}
+  .subtitle{color:var(--muted); margin:6px 0 0 0; font-size:14px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.02)), var(--card); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow)}
+  .controls{padding:18px}
+  .grid{display:grid; gap:12px; grid-template-columns: repeat(12, 1fr)}
+  .col-6{grid-column: span 6}
+  .col-4{grid-column: span 4}
+  .col-3{grid-column: span 3}
+  .col-12{grid-column: 1 / -1}
+  label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+  input, select{width:100%; padding:12px 12px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--text); outline:none}
+  input:focus, select:focus{border-color:var(--ring); box-shadow: 0 0 0 4px rgba(59,130,246,.2)}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .btn{padding:12px 16px; border-radius:12px; border:1px solid var(--border); background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.05)); color:var(--text); cursor:pointer}
+  .btn:hover{transform: translateY(-1px)}
+  .btn.primary{border-color: transparent; background: linear-gradient(135deg, #6366f1, #10b981); color:white}
+  .btn.ghost{background: transparent}
+  .btn.danger{border-color: transparent; background: linear-gradient(135deg, #fb7185, #f59e0b); color:white}
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; user-select:none}
+  .sites{padding:14px 18px; display:flex; flex-wrap:wrap; gap:10px}
+  .site-chip{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.02)}
+  .site-chip input{accent-color:#10b981}
+  .preview{padding:10px 0 4px}
+    .url{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+  background: rgba(255,255,255,.03);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+    }
+  .list{padding:10px 18px 16px}
+  .row-slim{display:grid; gap:8px}
+  .url-item{padding:10px 12px; border:1px dashed var(--border); border-radius:12px}
+  .muted{color:var(--muted)}
+  .footer{margin:18px 0; color:var(--muted); font-size:12px}
+  .right{margin-left:auto}
+  .ok{color:var(--ok)} .warn{color:var(--danger)}
+  .switch{position:relative; width:44px; height:26px; background:#1f2937; border-radius:999px; border:1px solid var(--border); cursor:pointer}
+  .knob{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:white; transition:.2s}
+  .switch.on .knob{transform: translateX(18px)}
+  @media (max-width:820px){ .col-6{grid-column: span 12} .col-4{grid-column: span 6} .col-3{grid-column: span 6} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">🚗</div>
+      <div>
+        <div class="title">Auto Zoeker</div>
+        <p class="subtitle">Zoek autos op de geselecteerde websites</p>
+      </div>
+      <div class="right row">
+        <span class="muted">Dark mode</span>
+        <div id="darkToggle" class="switch"><div class="knob"></div></div>
+      </div>
+    </header>
+
+    <section class="card controls">
+      <div class="grid">
+        <div class="col-6">
+          <label>Make</label>
+          <input id="make" placeholder="Volvo" />
+        </div>
+        <div class="col-6">
+          <label>Model</label>
+          <input id="model" placeholder="V60" />
+        </div>
+
+        <div class="col-3">
+          <label>Min year</label>
+          <input id="ymin" type="number" placeholder="1975" />
+        </div>
+        <div class="col-3">
+          <label>Max year</label>
+          <input id="ymax" type="number" placeholder="2010" />
+        </div>
+        <div class="col-3">
+          <label>Max km</label>
+          <input id="km" type="number" placeholder="150000" />
+        </div>
+
+        <div class="col-12">
+          <div class="row">
+            <button class="btn primary" id="openBtn">Open <span id="countSites">all</span> searches</button>
+            <button class="btn" id="copyUrls">Copy all URLs</button>
+            <button class="btn ghost" id="refresh">Refresh preview</button>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="sites">
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="autoscout" checked> AutoScout24</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="leboncoin" checked> Leboncoin</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="milanuncios" checked> Milanuncios</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="blocket" checked> Blocket</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="subito" checked> Subito</div>
+      </div>
+      <div class="list row-slim" id="previewList"></div>
+    </section>
+
+    <section class="card controls">
+      <div class="row">
+        <div class="pill" id="savePreset">💾 Save preset</div>
+        <div class="pill" id="deletePreset">🗑️ Delete preset</div>
+        <select id="presetSelect" class="pill" style="padding:10px 12px">
+          <option value="">Load preset…</option>
+        </select>
+        <div class="pill" id="shareLink">🔗 Share filters</div>
+        <span class="muted">Presets are stored locally in your browser.</span>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+  // ===== Utility =====
+  const $ = sel => document.querySelector(sel);
+  const esc = encodeURIComponent;
+  const v = id => (document.getElementById(id)?.value || "").trim();
+
+  function buildKeywords() {
+    const parts = [];
+    if (v("make")) parts.push(v("make"));
+    if (v("model")) parts.push(v("model"));
+    if (v("ymin") && v("ymax")) parts.push(`${v("ymin")}-${v("ymax")}`);
+    return parts.filter(Boolean).join(" ");
+  }
+
+  // ===== Site URL builders (best-effort; keep keyword fallback) =====
+const builders = {
+    autoscout: (s) => {
+        // Build a Dutch AutoScout24 search URL, newest first
+        const base = `https://www.autoscout24.nl/lst/${esc(v('make'))}/${esc(v('model'))}`;
+        const qp = new URLSearchParams();
+
+        // sort: newest first
+        qp.set('sort', 'age');
+        qp.set('desc', '1');
+
+        // optional: show cars category explicitly
+        qp.set('atype', 'C'); // cars
+
+        // filters you kept
+        if (s.ymin) qp.set('fregfrom', s.ymin);   // first registration from
+        if (s.ymax) qp.set('fregto', s.ymax);     // first registration to
+        if (s.km)   qp.set('kmto', s.km);         // max mileage
+
+        // you removed price/keywords, so we don’t add them.
+        // If you later re-add "price", this works: qp.set('priceto', s.price)
+
+        return `${base}?${qp.toString()}`;
+    },
+
+    leboncoin: (s) => {
+        // Build a leboncoin search URL, newest first
+        const base = `https://www.leboncoin.fr/recherche`;
+        const qp = new URLSearchParams();
+
+        qp.set('category', '2');               // cars
+        if (s.ymin || s.ymax) qp.set('regdate', `${s.ymin || ''}-${s.ymax || ''}`);
+
+        // leboncoin expects brand/model enums; this simple helper formats like "BMW" and "BMW_M3"
+        const toLbc = (str) => (str || '').trim().replace(/\s+/g, '_').toUpperCase();
+        if (s.make)  qp.set('u_car_brand',  toLbc(s.make));
+        if (s.model) qp.set('u_car_model',  `${toLbc(s.make)}_${toLbc(s.model)}`);
+
+        // newest first
+        qp.set('sort', 'time');
+        qp.set('order', 'desc');
+
+        // optional: mileage max as a range (some deployments use this param)
+        if (s.km) qp.set('mileage', `0-${s.km}`);
+
+        return `${base}?${qp.toString()}`;
+    },
+  
+    milanuncios: (s) => {
+    // Spain — used cars, newest first
+    const base = `https://www.milanuncios.com/coches-de-segunda-mano/`;
+    const qp = new URLSearchParams();
+
+    // Free-text: Milanuncios search box (works well when model list is generic)
+    const kw = [s.make, s.model].filter(Boolean).join(' ');
+    if (kw) qp.set('s', kw);
+
+    // Sort by date (newest first)
+    qp.set('orden', 'date');
+
+    // Filters
+    if (s.km)   qp.set('kilometersTo', s.km);
+    if (s.ymin) qp.set('anod', s.ymin);
+    if (s.ymax) qp.set('anoh', s.ymax);
+
+    // Special case: BMW M3 — site’s model list is “3 Series”; IDs help narrow results
+    const makeL = (s.make || '').toLowerCase();
+    const modelL = (s.model || '').toLowerCase();
+    if (makeL === 'bmw' && modelL.includes('m3')) {
+        qp.set('marca', '7');   // BMW
+        qp.set('modelo', '70'); // Serie 3
+        // Your note said adding free text 'M3' helps; ensure it's present
+        if (!kw.toLowerCase().includes('m3')) qp.set('s', (kw ? kw + ' ' : '') + 'M3');
+    }
+
+    // Optional hint flags (harmless if omitted)
+    qp.set('demanda', 'n');
+
+    return `${base}?${qp.toString()}`;
+    },
+
+    blocket: (s) => {
+    const base = `https://www.blocket.se/bilar/sok`;
+    const params = new URLSearchParams();
+
+    // Build JSON-based filters (Blocket expects multiple ?filter=... entries)
+    const filters = [];
+
+    if (s.make) {
+        filters.push({ key: "make", values: [s.make] });
+    }
+    if (s.model) {
+        // Blocket uses "models" (plural)
+        filters.push({ key: "models", values: [s.model] });
+    }
+    if (s.ymin || s.ymax) {
+        filters.push({
+        key: "modelYear",
+        range: { start: String(s.ymin || ""), end: String(s.ymax || "") }
+        });
+    }
+    if (s.km) {
+        // Note: Blocket uses "milage" (their spelling) with range
+        filters.push({
+        key: "milage",
+        range: { start: "", end: String(s.km) }
+        });
+    }
+
+    // Append each filter as its own query param
+    for (const f of filters) {
+        params.append("filter", JSON.stringify(f));
+    }
+
+    return `${base}?${params.toString()}`;
+    },
+
+  subito: (s) => {
+    // Path: /annunci-italia/vendita/auto/{make}/ (make only)
+    const makeSlug = (s.make || "").trim().toLowerCase();
+    const base =
+      `https://www.subito.it/annunci-italia/vendita/auto/` +
+      (makeSlug ? `${encodeURIComponent(makeSlug)}/` : "");
+
+    const qp = new URLSearchParams();
+
+    // Free text: include make+model so "M3" ends up in q=
+    const kw = [s.make, s.model].filter(Boolean).join(" ").trim();
+    if (kw) qp.set("q", kw);
+
+    // Years
+    if (s.ymin) qp.set("ys", s.ymin);
+    if (s.ymax) qp.set("ye", s.ymax);
+
+    // Mileage: Subito’s `me` is a compact bucket value. Your example maps
+    // 150000 km → me=25, so we approximate as steps of 6000 km.
+    // (If results look off, tweak the divisor here.)
+    if (s.km) {
+      const me = Math.ceil(parseInt(s.km, 10) / 6000); // 150000 -> 25
+      qp.set("me", String(me));
+    }
+
+    return `${base}?${qp.toString()}`;
+  },
+
+};
+
+  const siteNames = {
+    autoscout: "AutoScout24",
+    leboncoin: "Leboncoin",
+    milanuncios: "Milanuncios",
+    blocket: "Blocket",
+    subito: "Subito",
+  };
+
+  function getState(){
+    return {
+      make: v("make"),
+      model: v("model"),
+      ymin: v("ymin"),
+      ymax: v("ymax"),
+      km: v("km"),
+      price: v("price"),
+      sites: [...document.querySelectorAll(".siteCheck")].filter(x=>x.checked).map(x=>x.dataset.id),
+      dark: document.body.classList.contains("dark")
+    }
+  }
+
+  function setIfExists(id, val){
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? "";
+  }
+
+  function setState(s){
+    // safe assignments
+    setIfExists("make", s.make);
+    setIfExists("model", s.model);
+    setIfExists("ymin", s.ymin);
+    setIfExists("ymax", s.ymax);
+    setIfExists("km",   s.km);
+    setIfExists("price", s.price);
+    setIfExists("ftxt",  s.ftxt);
+    setIfExists("fuel",  s.fuel);
+    setIfExists("gear",  s.gear);
+
+    if (Array.isArray(s.sites)) {
+      document.querySelectorAll(".siteCheck").forEach(cb => {
+        cb.checked = s.sites.includes(cb.dataset.id);
+      });
+    }
+
+    updateCount();
+    renderPreview(); // will now run even if some inputs don’t exist
+  }
+
+  function buildAllUrls(){
+    const s = getState();
+    const urls = [];
+    (s.sites||Object.keys(builders)).forEach(id=>{
+      const fn = builders[id];
+      try {
+        const u = fn(s);
+        urls.push({ id, name: siteNames[id], url: u });
+      } catch(e){
+        urls.push({ id, name: siteNames[id], url: "", error: e?.message || "Failed to build URL" });
+      }
+    });
+    return urls;
+  }
+
+  function renderPreview(){
+    const list = $("#previewList");
+    list.innerHTML = "";
+    const urls = buildAllUrls();
+    urls.forEach(item=>{
+      const div = document.createElement("div");
+      div.className = "url-item";
+      div.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <div><b>${item.name}</b> ${item.error?`<span class="warn">· ${item.error}</span>`:`<span class="ok">· ready</span>`}</div>
+            <div class="url">${item.url || "<i class='muted'>Could not build URL</i>"}</div>
+          </div>
+          <div class="row">
+            <a class="btn" href="${item.url || '#'}" target="_blank" rel="noopener">Open</a>
+            <button class="btn ghost" data-copy="${item.url}">Copy</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function updateCount(){
+    const n = [...document.querySelectorAll(".siteCheck")].filter(x=>x.checked).length;
+    $("#countSites").textContent = n || "no";
+  }
+
+  // ===== Presets & sharing =====
+  const PRESET_KEY = "car_meta_search_presets_v1";
+  function loadPresets(){
+    const map = JSON.parse(localStorage.getItem(PRESET_KEY) || "{}");
+    const sel = $("#presetSelect");
+    const current = sel.value;
+    sel.innerHTML = `<option value="">Load preset…</option>` + Object.keys(map).map(k=>`<option value="${k}">${k}</option>`).join("");
+    if (current) sel.value = current;
+    return map;
+  }
+  function savePreset(){
+    const name = prompt("Preset name?");
+    if (!name) return;
+    const map = loadPresets();
+    map[name] = getState();
+    localStorage.setItem(PRESET_KEY, JSON.stringify(map));
+    loadPresets();
+    alert("Preset saved.");
+  }
+  function deletePreset(){
+    const sel = $("#presetSelect");
+    if (!sel.value) { alert("Pick a preset to delete."); return; }
+    const map = loadPresets();
+    delete map[sel.value];
+    localStorage.setItem(PRESET_KEY, JSON.stringify(map));
+    loadPresets();
+    sel.value = "";
+    alert("Preset deleted.");
+  }
+  function applyPreset(name){
+    const map = loadPresets();
+    if (map[name]) setState(map[name]);
+  }
+  function shareLink(){
+    const s = getState();
+    const qs = new URLSearchParams(s);
+    qs.set('sites', (s.sites||[]).join(','));
+    const url = location.origin + location.pathname + "?" + qs.toString();
+    navigator.clipboard.writeText(url).then(()=>alert("Shareable link copied to clipboard."));
+  }
+  function loadFromQuery(){
+    const qs = new URLSearchParams(location.search);
+    if (![...qs.keys()].length) return;
+    const s = {
+      make: qs.get("make")||"",
+      model: qs.get("model")||"",
+      ymin: qs.get("ymin")||"",
+      ymax: qs.get("ymax")||"",
+      km: qs.get("km")||"",
+      price: qs.get("price")||"",
+      sites: (qs.get("sites")||"").split(",").filter(Boolean)
+    };
+    setState(s);
+  }
+
+  // ===== Dark mode toggle =====
+const toggle = document.getElementById("darkToggle");
+
+function applyTheme(mode){ // mode: 'dark' | 'light'
+  document.body.classList.remove('dark','light');
+  document.body.classList.add(mode);
+  toggle.classList.toggle("on", mode === 'dark');
+  localStorage.setItem('theme', mode);
+}
+
+function initTheme(){
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark' || saved === 'light') {
+    applyTheme(saved);
+  } else {
+    // default to system preference
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+  }
+}
+
+toggle.addEventListener("click", () => {
+  const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+  applyTheme(next);
+});
+
+  // ===== Events =====
+  document.querySelectorAll("input,select").forEach(el => el.addEventListener("change", renderPreview));
+  document.querySelectorAll(".siteCheck").forEach(cb => cb.addEventListener("change", () => { updateCount(); renderPreview(); }));
+
+  $("#openBtn").addEventListener("click", () => {
+    const urls = buildAllUrls().map(x=>x.url).filter(Boolean);
+    if (!urls.length) { alert("No sites selected."); return; }
+    urls.forEach(u => window.open(u, "_blank", "noopener"));
+  });
+  $("#copyUrls").addEventListener("click", async () => {
+    const urls = buildAllUrls().map(x=>x.url).filter(Boolean).join("\n");
+    await navigator.clipboard.writeText(urls);
+    alert("All URLs copied.");
+  });
+  $("#refresh").addEventListener("click", renderPreview);
+  $("#savePreset").addEventListener("click", savePreset);
+  $("#deletePreset").addEventListener("click", deletePreset);
+  $("#presetSelect").addEventListener("change", (e)=>applyPreset(e.target.value));
+  $("#shareLink").addEventListener("click", shareLink);
+  $("#previewList").addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-copy]");
+    if (btn) {
+      const u = btn.getAttribute("data-copy");
+      if (!u) return;
+      navigator.clipboard.writeText(u).then(()=>{ btn.textContent = "Copied"; setTimeout(()=>btn.textContent="Copy",1000); });
+    }
+  });
+
+  // ===== Init =====
+  initTheme();
+  loadPresets();
+  loadFromQuery();
+  updateCount();
+  renderPreview();
+</script>
+</body>
+</html>

@@ -34,7 +34,7 @@ The program has to scrape car search result data from all given websites, and co
 | Germany     | www.kleinanzeigen.de | High     |
 | Sweden      | www.blocket.se       | High     |
 | Norway      | www.finn.nl          | Low      |
-| France      | www.lebencoin.fr     | High     |
+| France      | www.leboncoin.fr     | High     |
 | Italy       | www.subito.it        | High     |
 | Spain       | www.milanuncios.com  | High     |
 | Portugal    | www.olx.pt           |          |
@@ -45,6 +45,7 @@ The program has to scrape car search result data from all given websites, and co
 ## Instructions
 
 1. First, we want to get advice on the proper framework to use. A website is the goal, what kind of framework should we use that can handle this and also have a nice user interface?
+I prefer something simple, a client-side static website that just uses javascript. I dont need a server or database initially. I want to host it on github as a static website.
 2. We will start with a single website first: www.autoscout24.nl
 3. My best guess is that to do this, we need URL create instructions for the listed websites, and than a way to manipulate these URL's to handle the search queries
 4. So first we create the app/website, the framework, after that we will handle the websites one by one to add URL create methods
