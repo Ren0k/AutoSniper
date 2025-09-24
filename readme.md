@@ -8,9 +8,8 @@ The program collects the cars from the websites and presents it to the user.
 
 ## Goal
 
+We want to create a website that searches a list of car selling websites all at the same time and returns the results to the user.
 The program has to scrape car search result data from all given websites, and combine the data into a presentable form to the user.
-The challenge is to have a specific interface that creates the search URL for each website.
-Depending on the complexity, either the HTML result has to be returned, or the list of cars can be scraped from the result page and transformed into a custom format.
 
 ## Search filters and details
 
@@ -43,9 +42,12 @@ Depending on the complexity, either the HTML result has to be returned, or the l
 |             | www.autoscout24.nl   |          |
 |             | www.mobile.de        |          |
 
-## Prompt
+## Instructions
 
-1. First, we want to get advice on the proper framework to use. A website is the goal, what kind of framework should we use?
-2. As in initial goal, we want a list of the search queries for the websites so we can with a single press on a button search on the given websites and open the result page
-3. How do we proceed with fitting the search prompts for all websites? Should I use the developer console to get info on the search URL?
-4. Perhaps we should start with a single website first: www.autoscout24.nl
+1. First, we want to get advice on the proper framework to use. A website is the goal, what kind of framework should we use that can handle this and also have a nice user interface?
+2. We will start with a single website first: www.autoscout24.nl
+3. My best guess is that to do this, we need URL create instructions for the listed websites, and than a way to manipulate these URL's to handle the search queries
+4. So first we create the app/website, the framework, after that we will handle the websites one by one to add URL create methods
+5. Initially we will just open all the results in new browser tabs to show the user the results for all websites
+6. Later, we want to incorporate a method that scrapes the results from the search results to create a custom presentation format
+7. On the websites, the search filters have to be selectable and customizable
