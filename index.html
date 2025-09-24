@@ -40,6 +40,25 @@
     --border:#e6e8ee;
     --shadow:0 8px 20px rgba(15,23,42,.06);
   }
+  .url-item .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* top align */
+    gap: 12px;
+    flex-wrap: nowrap;       /* prevent wrapping */
+  }
+
+  .url-box {
+    flex: 1 1 auto;
+    min-width: 0;            /* important: allow shrinking inside flex */
+  }
+
+  .url-actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+  }
+
   }
   @media (prefers-color-scheme: light) {
     :root{
@@ -159,10 +178,15 @@
     <section class="card">
       <div class="sites">
         <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="autoscout" checked> AutoScout24</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="marktplaats" checked> Marktplaats</div>
         <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="leboncoin" checked> Leboncoin</div>
         <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="milanuncios" checked> Milanuncios</div>
         <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="blocket" checked> Blocket</div>
         <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="subito" checked> Subito</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="olxpt" checked> OLX</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="willhaben" checked> Willhaben</div>
+        <div class="site-chip"><input type="checkbox" class="siteCheck" data-id="kleinanzeigen" checked> Kleinanzeigen</div>
+
       </div>
       <div class="list row-slim" id="previewList"></div>
     </section>
@@ -340,14 +364,151 @@ const builders = {
     return `${base}?${qp.toString()}`;
   },
 
+  olxpt: (s) => {
+    // Base path: /carros-motos-e-barcos/carros/{make}/
+    const makeSlug = (s.make || "").trim().toLowerCase();
+    const base = `https://www.olx.pt/carros-motos-e-barcos/carros/` + (makeSlug ? `${encodeURIComponent(makeSlug)}/` : "");
+
+    // OLX uses bracketed keys; URLSearchParams works fine if we pass exact keys
+    const qp = new URLSearchParams();
+
+    // newest first
+    qp.set('search[order]', 'created_at:desc');
+
+    // model as enum (lowercased; spaces -> dashes)
+    const modelEnum = (s.model || "").trim().toLowerCase().replace(/\s+/g, '-');
+    if (modelEnum) qp.append('search[filter_enum_modelo][0]', modelEnum);
+
+    // years
+    if (s.ymin) qp.set('search[filter_float_year:from]', String(s.ymin));
+    if (s.ymax) qp.set('search[filter_float_year:to]', String(s.ymax));
+
+    // max km (quilómetros)
+    if (s.km) qp.set('search[filter_float_quilometros:to]', String(s.km));
+
+    return `${base}?${qp.toString()}`;
+  },
+
+};
+
+// Known make/model IDs for willhaben (extend as you discover more)
+const WILLHABEN_IDS = {
+  bmw: { make: "1005", models: { "m3": "1042" } },
+  // add more here as needed
+};
+
+builders.willhaben = (s) => {
+  const base = "https://www.willhaben.at/iad/gebrauchtwagen/auto/gebrauchtwagenboerse";
+  const qp = new URLSearchParams();
+
+  // These two appear in live URLs; harmless if included
+  qp.set("sfId", "9c5e422b-3946-4bbb-8dc0-9bd3cda7ed2e");
+  qp.set("isNavigation", "true");
+
+  // Try to use make/model IDs when known (BMW/M3 in your example)
+  const makeL = (s.make || "").trim().toLowerCase();
+  const modelL = (s.model || "").trim().toLowerCase();
+  const known = WILLHABEN_IDS[makeL];
+
+  if (known?.make) qp.set("CAR_MODEL/MAKE", known.make);
+  if (known?.models?.[modelL]) qp.set("CAR_MODEL/MODEL", known.models[modelL]);
+
+  // Always add keyword as a fallback (helps when IDs aren’t set)
+  const kw = [s.make, s.model].filter(Boolean).join(" ").trim();
+  if (kw) qp.set("keyword", kw);
+
+  // Filters
+  if (s.km)   qp.set("MILEAGE_TO", String(s.km));
+  if (s.ymin) qp.set("YEAR_MODEL_FROM", String(s.ymin));
+  if (s.ymax) qp.set("YEAR_MODEL_TO", String(s.ymax));
+
+  return `${base}?${qp.toString()}`;
+};
+
+// Kleinanzeigen (DE)
+builders.kleinanzeigen = (s) => {
+  const base = "https://www.kleinanzeigen.de/s-autos";
+  const makeL  = (s.make  || "").trim().toLowerCase();
+  const modelL = (s.model || "").trim().toLowerCase();
+
+  // Path: /s-autos/{make}/{model}/
+  const path = [
+    base,
+    makeL ? encodeURIComponent(makeL) : null,
+    modelL ? encodeURIComponent(modelL) : null
+  ].filter(Boolean).join("/");
+
+  // Filters are path tokens joined by '+'
+  const tokens = ["k0c216"]; // category 216 = Autos
+
+  // First registration year range
+  if (s.ymin || s.ymax) {
+    tokens.push(`autos.ez_i:${s.ymin || ""},${s.ymax || ""}`);
+  }
+
+  // Max mileage (km)
+  if (s.km) {
+    tokens.push(`autos.km_i:,${s.km}`);
+  }
+
+  // Make filter token (helps even if make is already in the path)
+  if (makeL) {
+    tokens.push(`autos.marke_s:${makeL}`);
+  }
+
+  // Kleinanzeigen expects commas URL-encoded; leave other punctuation intact
+  const filterStr = tokens.map(t => t.replaceAll(",", "%2C")).join("+");
+
+  return `${path}/${filterStr}`;
+};
+
+// Optional: brand filter IDs used by Marktplaats in the hash (extend as needed)
+const MARKTPLAATS_BRAND_F = {
+  bmw: "10882",
+  // add more brands here if you learn their IDs
+};
+
+builders.marktplaats = (s) => {
+  const makeL  = (s.make  || "").trim().toLowerCase();
+  const modelL = (s.model || "").trim().toLowerCase();
+
+  // Base path: /l/auto-s/{make}/  (falls back to /l/auto-s/ if no make)
+  const base =
+    `https://www.marktplaats.nl/l/auto-s/` +
+    (makeL ? `${encodeURIComponent(makeL)}/` : "");
+
+  // Hash params joined by "|"
+  const parts = [];
+
+  // Query term (model works well here)
+  if (modelL) parts.push(`q:${encodeURIComponent(modelL)}`);
+
+  // Brand token (f:xxxx) when known
+  const fId = MARKTPLAATS_BRAND_F[makeL];
+  if (fId) parts.push(`f:${fId}`);
+
+  // Structured filters
+  if (s.ymin) parts.push(`constructionYearFrom:${s.ymin}`);
+  if (s.ymax) parts.push(`constructionYearTo:${s.ymax}`);
+  if (s.km)   parts.push(`mileageTo:${s.km}`);
+
+  // Newest first
+  parts.push(`sortBy:SORT_INDEX`, `sortOrder:DECREASING`);
+
+  const hash = parts.join("|");
+  return `${base}#${hash}`;
 };
 
   const siteNames = {
     autoscout: "AutoScout24",
+    marktplaats: "Marktplaats",
     leboncoin: "Leboncoin",
     milanuncios: "Milanuncios",
     blocket: "Blocket",
     subito: "Subito",
+    olxpt: "OLX.pt",
+    willhaben: "Willhaben",
+    kleinanzeigen: "Kleinanzeigen",
   };
 
   function getState(){
@@ -413,12 +574,12 @@ const builders = {
       const div = document.createElement("div");
       div.className = "url-item";
       div.innerHTML = `
-        <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
-          <div>
+        <div class="row">
+          <div class="url-box">
             <div><b>${item.name}</b> ${item.error?`<span class="warn">· ${item.error}</span>`:`<span class="ok">· ready</span>`}</div>
             <div class="url">${item.url || "<i class='muted'>Could not build URL</i>"}</div>
           </div>
-          <div class="row">
+          <div class="url-actions">
             <a class="btn" href="${item.url || '#'}" target="_blank" rel="noopener">Open</a>
             <button class="btn ghost" data-copy="${item.url}">Copy</button>
           </div>
